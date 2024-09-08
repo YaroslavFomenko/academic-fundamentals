@@ -1,0 +1,495 @@
+\iffalse
+\documentclass{article_saj}
+\usepackage{graphicx,saj,multicol,subeqnarray}
+\usepackage{natbib}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{widetext}
+\usepackage{url}
+\usepackage{bm}
+\usepackage{tikz} % for checkmark
+\usepackage{pifont} % for xmark
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsmath,upgreek}
+\usepackage{titlesec}
+\usepackage{tabularx}
+\input{astro}
+\titlelabel{\thetitle.\quad}
+\definecolor{xlinkcolor}{cmyk}{1,0.6,0,0}
+\usepackage[bookmarks=false,         % show bookmarks bar?
+     pdfnewwindow=true,      % links in new window
+     colorlinks=true,    % false: boxed links; true: colored links
+     linkcolor=xlinkcolor,     % color of internal links
+     citecolor=xlinkcolor,     % color of links to bibliography
+     filecolor=xlinkcolor,  % color of file links
+     urlcolor=xlinkcolor,      % color of external links
+final=true
+]{hyperref}
+
+% Papertype can be "Invited Review", "Original Scientific Paper",
+% "Preliminary report" or "Professional paper"
+
+\def\papertype{\ \hfill\ Editorial}
+
+\def\udc{52}
+\setcounter{publno}{200}
+\setcounter{publyear}{2020}
+\setcounter{page}{1}
+\setcounter{firstpage}{1}
+\setcounter{lastpage}{5}
+
+\citestyle{kluwer}%
+
+\setcounter{footnote}{0}
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
+
+\begin{document}
+%
+\parindent=.5cm
+\baselineskip=3.8truemm
+\columnsep=.5truecm
+%
+\newenvironment{lefteqnarray}{\arraycolsep=0pt\begin{eqnarray}}
+{\end{eqnarray}\protect\aftergroup\ignorespaces}
+\newenvironment{lefteqnarray*}{\arraycolsep=0pt\begin{eqnarray*}}
+{\end{eqnarray*}\protect\aftergroup\ignorespaces}
+\newenvironment{leftsubeqnarray}{\arraycolsep=0pt\begin{subeqnarray}}
+{\end{subeqnarray}\protect\aftergroup\ignorespaces}
+%
+
+% Runningtitle
+
+\begin{strip}
+
+{\ }
+
+\vskip-1cm
+
+\publ
+
+\type
+
+{\ }
+
+% Title
+
+\title{Lab 2.3}
+
+% Authors
+
+\authors{I. Meshkov$^1$}
+
+\vskip3mm
+
+% Address
+
+% E-mail
+
+% Received and Accepted dates
+
+% Abstract
+
+% Keywords (see keywords.pdf file)
+
+\end{strip}
+
+\tenrm
+
+% Sections
+
+\section{SURFACE MODELING}
+
+\indent
+
+For modeling ground-truth data care must be taken in the surface representation, as it impacts the rest of our pipeline. Although triangulated surfaces are popular and easy to work with, we use smooth and piecewise-smooth surfaces as ground-truth, as it benefits the sampling and evaluation phases as follows: 
+
+\parindent=.7cm
+
+\par\hang\textindent{(i)} Sampling. Our laser-based scanning simulator requires a surface equipped with a smooth normal field in order to best model an optical laser scanner,
+
+\par\hang\textindent{(ii)} Evaluation. The surface reconstruction algorithms under consideration assume a point cloud sampled from a smooth surface, so using a smooth surface for quantitative evaluation respects an algorithm’s assumptions. 
+
+\parindent=.5cm
+
+We use implicit surfaces to model smooth and piecewise-smooth surfaces, where we introduce integrated polygonal constraints as a mechanism for shape modeling. Namely we create smooth and piecewise-smooth implicit surfaces by approximating triangulated surface meshes, or more generally polygon soups, through weight functions integrated over polygons. 
+
+\subsection{POLYGONAL MPU}
+
+\indent
+
+Our implicit representation is a straightforward extension of Multilevel Partition of Unity (MPU) applied to polygon soup, with the main distinction of integrating weight functions over polygons. We use the weight function \ref{eq:1} of defined for a given point $x \in \mathbb{R}^3$ and for an arbitrary point on a triangle $t, p \in t$: 
+
+\begin{equation}
+ w(\mathbf{x}, \mathbf{p}) = \frac{1}{ (||\mathbf{x} - \mathbf{p}||^2 + c^2)}
+\label{eq:1}
+\end{equation}
+
+
+\noindent 
+Where \\
+\indent 
+$p$ is a smoothing parameter. 
+
+We may now integrate this weight function over the entire triangle.
+
+\begin{equation}
+ w(\mathbf{x}, t) = \int_{\mathbf{p} \in t} w(\mathbf{x}, \mathbf{p}) d\mathbf{p}
+\label{eq:1}
+\end{equation}
+
+For evaluating Equation \ref{eq:2}, propose a method for numerical integration. However, we derive a closed form solution for this expression. This prevents potential numerical inaccuracies caused by a quadrature scheme, which could be particularly detrimental to having a reliable benchmark. We outline the derivation in Appendix A. 
+
+\par\hang\textindent{(1)} We design a novel feature-aware recurrent point cloud denoising network, which is able to effectively remove noise, while well preserving various geometric features. 
+
+\par\hang\textindent{(2)} To learn a more representative feature for each point, we introduce a bi-directional RNN based multi-scale feature aggregation module, which is capable of extracting adaptive features for different denoising stages.
+
+\par\hang\textindent{(3)} We introduce a recurrent propagation layer, which is used to exploit the deep features across denoising recursion stages, for recovering smoothed fine geometric features. 
+
+\par\hang\textindent{(4)} We explicitly incorporate the feature smoothness of each point into the loss function, to further enable the denoised point cloud to be faithfully located on the underlying surface, while preserving more geometric features.
+
+Equipped with a mechanism for integrating weights over polygons, we proceed with MPU by fitting shape functions to a triangle soup $T = {t_1, \ldots, t_n}$. 
+
+In practice we use linear functions for our shape functions, where for each cell i we associate the function $g_i(\mathbf{x}) = \mathbf{x}^T\mathbf{n}_i + b_i$. For all triangles which belong to the sphere of cell $i, T_i \subset T$ , we fit the shape function as follows eq. \ref{eq:3}, \ref{eq:4} 
+
+\begin{equation}
+\mathbf{n}i = \frac{\sum{t \in T_i} n_t \int_{\mathbf{p} \in t} w(\mathbf{s}i, \mathbf{p}) d\mathbf{p}}{\sum{t \in T_i} \int_{\mathbf{p} \in t} w(\mathbf{s}_i, \mathbf{p}) d\mathbf{p}}
+\label{eq:3}
+\end{equation}
+
+\begin{equation}
+ \mathbf{b}i = \left< \frac{\sum{t \in T_i} \int_{\mathbf{p} \in t} \mathbf{p} \cdot w(\mathbf{s}i, \mathbf{p}) d\mathbf{p}}{\sum{t \in T_i} \int_{\mathbf{p} \in t} w(\mathbf{s}_i, \mathbf{p}) d\mathbf{p}}, n_i \right>
+\label{eq:4}
+\end{equation}
+
+\noindent 
+Where\\
+\indent 
+$nt$ is the triangle normal of t and $si$ is the center of the sphere for cell i. 
+
+Although one may use higher order shape functions under polygonal constraints, such as quadrics, we found the difference to be negligible, where the main difference is that for linear functions we require a larger number of shape functions to adequately approximate T.
+
+\begin{table}\centering
+\footnotesize
+\begin{tabular}{cccccc}
+\hline
+algorithm & comps & bndry & manifold & genus & time \\
+\hline
+apss & 47.37 & 140.86 & 0.50 & 1.82 & 36.02 \\
+\hline
+fourier & 1.54 & 0.00 & 1.00 & 0.49 & 28.70 \\
+\hline
+imls & 38.48 & 194.65 & 0.74 & 1.66 & 34.11 \\
+\hline
+mpu & 100.69 & 9.71 & 0.49 & 0.79 & 12.83 \\
+\hline
+\end{tabular}
+\caption{Summary of Error Distribution Experiments}
+\label{table2}
+\end{table}
+
+The octree is built such that each cell is subdivided only if the zero set of its shape function deviates sufficiently from the sphere’s triangles. We may then evaluate the implicit function at a point by blending all shape functions whose spheres contain that point at eq.\ref{eq:5}: 
+
+\begin{equation}
+ f(\mathbf{x}) = \frac{\sum_i q_i(\mathbf{x}) g_i(\mathbf{x})}{\sum_i q_i(\mathbf{x})}
+\label{eq:5}
+\end{equation}
+
+\noindent 
+Where\\
+\indent 
+$qi$ is a quadratic b-spline function centered at $si$. 
+
+To preserve sharp features, we follow [Ohtake et al. 2003] in detecting sharp features within a leaf cell and consequently applying CSG operations for exact feature preservation. We then apply union and intersection operations on overlapping shape functions to exactly preserve the sharp feature, where we support sharp feature curves and corners containing a maximum degree of four. 
+
+\begin{table}\centering
+\footnotesize
+\begin{tabular}{cccccc}
+\hline
+algorithm & comps & bndry & manifold & genus & time \\
+\hline
+apss & 221.60 & 0.71 & 1.00 & 0.00 & 50.59 \\
+\hline
+fourier & 1.00 & 0.00 & 1.00 & 0.00 & 27.24 \\
+\hline
+imls & 193.16 & 4.76 & 1.00 & 0.00 & 48.62 \\
+\hline
+mpu & 1.20 & 0.00 & 1.00 & 0.00 & 7.13 \\
+\hline
+\end{tabular}
+\caption{Noisy Spiral Statistics}
+\label{table2}
+\end{table}
+
+\subsection{Benchmark Shapes}
+
+We have modeled shapes specific to our two sets of experiments. Our first set of experiments consists of complex shapes, and so we have modeled five shapes containing different types of complexities. See Figure \ref{fig1} for these shapes. Lastly, the Daratech model contains sharp features, small tunnels, as well as thin surface sheets. 
+
+\begin{figure}
+\centerline{\includegraphics[width=1\columnwidth, keepaspectratio]{Рисунок1.eps}}
+\caption{Complex shapes created via our Polygonal MPU scheme}
+\label{fig1}
+\end{figure}
+
+\begin{figure}
+\centerline{\includegraphics[width=1\columnwidth, keepaspectratio]{Рисунок2.eps}}
+\caption{Simple shapes created via our Polygonal MPU scheme}
+\label{fig2}
+\end{figure}
+
+The second set of experiments utilizes simple shapes which may be sampled in a controlled manner. See Figure \ref{fig2} for these shapes. 
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                       C O M P I L I N G
+% You must compile your LaTeX source text "mysource.tex" in THE following
+% way:
+%  pdflatex mysource
+%  bibtex mysource
+%  pdflatex mysource
+%  pdflatex mysource
+% Compiling twice is required to set all the parameters needed
+% (lastpage, labels...) properly. It will also generate the mysource.bbl
+% with your bibliography.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}
+
+\fi
+%----------------------------------------------------------------------
+
+
+\documentclass[9pt,twocolumn,twoside]{opticajnl}
+\journal{opticajournal} % use for journal or Optica Open submissions
+
+% See template introduction for guidance on setting shortarticle option
+\setboolean{shortarticle}{true}
+% true = letter/tutorial
+% false = research/review article
+
+% ONLY applicable for journal submission shortarticle types:
+% When \setboolean{shortarticle}{true}
+% then \setboolean{memo}{true} will print "Memorandum" on title page header
+% Otherwise header will remain as "Letter"
+% \setboolean{memo}{true}
+
+\usepackage{lineno}
+\linenumbers % Turn off line numbering for Optica Open preprint submissions.
+
+\title{Lab 2.3 Second template}
+
+\author{I. Meshkov}
+
+\affil[1]{Samara Aerospace University}
+
+\usepackage{natbib}
+\usepackage{float}
+\usepackage{xcolor}
+
+\usepackage{url}
+\usepackage{bm}
+\usepackage{tikz} % for checkmark
+\usepackage{pifont} % for xmark
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsmath,upgreek}
+\usepackage{titlesec}
+\usepackage{tabularx}
+
+% Papertype can be "Invited Review", "Original Scientific Paper",
+% "Preliminary report" or "Professional paper"
+
+\def\papertype{\ \hfill\ Editorial}
+
+\def\udc{52}
+
+\setcounter{page}{1}
+
+\citestyle{kluwer}%
+
+\setcounter{footnote}{0}
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
+
+\begin{document}
+%
+
+\maketitle
+
+\parindent=.5cm
+\baselineskip=3.8truemm
+\columnsep=.5truecm
+%
+\newenvironment{lefteqnarray}{\arraycolsep=0pt\begin{eqnarray}}
+{\end{eqnarray}\protect\aftergroup\ignorespaces}
+\newenvironment{lefteqnarray*}{\arraycolsep=0pt\begin{eqnarray*}}
+{\end{eqnarray*}\protect\aftergroup\ignorespaces}
+\newenvironment{leftsubeqnarray}{\arraycolsep=0pt\begin{subeqnarray}}
+{\end{subeqnarray}\protect\aftergroup\ignorespaces}
+%
+
+\vskip-1cm
+
+% Sections
+
+\tableofcontents
+
+\section{SURFACE MODELING}
+
+\indent
+
+For modeling ground-truth data care must be taken in the surface representation, as it impacts the rest of our pipeline. Although triangulated surfaces are popular and easy to work with, we use smooth and piecewise-smooth surfaces as ground-truth, as it benefits the sampling and evaluation phases as follows: 
+
+\parindent=.7cm
+
+\begin{enumerate}
+\item Sampling. Our laser-based scanning simulator requires a surface equipped with a smooth normal field in order to best model an optical laser scanner,
+\item Evaluation. The surface reconstruction algorithms under consideration assume a point cloud sampled from a smooth surface, so using a smooth surface for quantitative evaluation respects an algorithm’s assumptions. 
+\end{enumerate}
+
+\parindent=.5cm
+
+We use implicit surfaces to model smooth and piecewise-smooth surfaces, where we introduce integrated polygonal constraints as a mechanism for shape modeling. Namely we create smooth and piecewise-smooth implicit surfaces by approximating triangulated surface meshes, or more generally polygon soups, through weight functions integrated over polygons. 
+
+\subsection{POLYGONAL MPU}
+
+\indent
+
+Our implicit representation is a straightforward extension of Multilevel Partition of Unity (MPU) applied to polygon soup, with the main distinction of integrating weight functions over polygons. We use the weight function \ref{eq:1} of defined for a given point $x \in \mathbb{R}^3$ and for an arbitrary point on a triangle $t, p \in t$: 
+
+\begin{equation}
+ w(\mathbf{x}, \mathbf{p}) = \frac{1}{ (||\mathbf{x} - \mathbf{p}||^2 + c^2)}
+\label{eq:1}
+\end{equation}
+
+
+\noindent 
+Where \\
+\indent 
+$p$ is a smoothing parameter. 
+
+We may now integrate this weight function over the entire triangle.
+
+\begin{equation}
+ w(\mathbf{x}, t) = \int_{\mathbf{p} \in t} w(\mathbf{x}, \mathbf{p}) d\mathbf{p}
+\label{eq:2}
+\end{equation}
+
+For evaluating Equation \ref{eq:2}, propose a method for numerical integration. However, we derive a closed form solution for this expression. This prevents potential numerical inaccuracies caused by a quadrature scheme, which could be particularly detrimental to having a reliable benchmark. We outline the derivation in Appendix A. 
+
+\begin{enumerate}
+\item We design a novel feature-aware recurrent point cloud denoising network, which is able to effectively remove noise, while well preserving various geometric features. 
+\item To learn a more representative feature for each point, we introduce a bi-directional RNN based multi-scale feature aggregation module, which is capable of extracting adaptive features for different denoising stages.
+\item We introduce a recurrent propagation layer, which is used to exploit the deep features across denoising recursion stages, for recovering smoothed fine geometric features. 
+\item We explicitly incorporate the feature smoothness of each point into the loss function, to further enable the denoised point cloud to be faithfully located on the underlying surface, while preserving more geometric features.
+\end{enumerate}
+
+Equipped with a mechanism for integrating weights over polygons, we proceed with MPU by fitting shape functions to a triangle soup $T = {t_1, \ldots, t_n}$. 
+
+In practice we use linear functions for our shape functions, where for each cell i we associate the function $g_i(\mathbf{x}) = \mathbf{x}^T\mathbf{n}_i + b_i$. For all triangles which belong to the sphere of cell $i, T_i \subset T$ , we fit the shape function as follows eq. \ref{eq:3}, \ref{eq:4} 
+
+\begin{equation}
+\mathbf{n}i = \frac{\sum{t \in T_i} n_t \int_{\mathbf{p} \in t} w(\mathbf{s}i, \mathbf{p}) d\mathbf{p}}{\sum{t \in T_i} \int_{\mathbf{p} \in t} w(\mathbf{s}_i, \mathbf{p}) d\mathbf{p}}
+\label{eq:3}
+\end{equation}
+
+\begin{equation}
+ \mathbf{b}i = \left< \frac{\sum{t \in T_i} \int_{\mathbf{p} \in t} \mathbf{p} \cdot w(\mathbf{s}i, \mathbf{p}) d\mathbf{p}}{\sum{t \in T_i} \int_{\mathbf{p} \in t} w(\mathbf{s}_i, \mathbf{p}) d\mathbf{p}}, n_i \right>
+\label{eq:4}
+\end{equation}
+
+\noindent 
+Where\\
+\indent 
+$nt$ is the triangle normal of t and $si$ is the center of the sphere for cell i. 
+
+Although one may use higher order shape functions under polygonal constraints, such as quadrics, we found the difference to be negligible, where the main difference is that for linear functions we require a larger number of shape functions to adequately approximate T.
+
+
+\begin{table}\centering
+\footnotesize
+\begin{tabular}{cccccc}
+\hline
+algorithm & comps & bndry & manifold & genus & time \\
+\hline
+apss & 47.37 & 140.86 & 0.50 & 1.82 & 36.02 \\
+\hline
+fourier & 1.54 & 0.00 & 1.00 & 0.49 & 28.70 \\
+\hline
+imls & 38.48 & 194.65 & 0.74 & 1.66 & 34.11 \\
+\hline
+mpu & 100.69 & 9.71 & 0.49 & 0.79 & 12.83 \\
+\hline
+\end{tabular}
+\caption{Summary of Error Distribution Experiments}
+\label{table2}
+\end{table}
+
+The octree is built such that each cell is subdivided only if the zero set of its shape function deviates sufficiently from the sphere’s triangles. We may then evaluate the implicit function at a point by blending all shape functions whose spheres contain that point at eq.\ref{eq:5}: 
+
+\begin{equation}
+ f(\mathbf{x}) = \frac{\sum_i q_i(\mathbf{x}) g_i(\mathbf{x})}{\sum_i q_i(\mathbf{x})}
+\label{eq:5}
+\end{equation}
+
+\noindent 
+Where\\
+\indent 
+$qi$ is a quadratic b-spline function centered at $si$. 
+
+To preserve sharp features, we follow [Ohtake et al. 2003] in detecting sharp features within a leaf cell and consequently applying CSG operations for exact feature preservation. We then apply union and intersection operations on overlapping shape functions to exactly preserve the sharp feature, where we support sharp feature curves and corners containing a maximum degree of four. 
+
+\begin{table}\centering
+\footnotesize
+\begin{tabular}{cccccc}
+\hline
+algorithm & comps & bndry & manifold & genus & time \\
+\hline
+apss & 221.60 & 0.71 & 1.00 & 0.00 & 50.59 \\
+\hline
+fourier & 1.00 & 0.00 & 1.00 & 0.00 & 27.24 \\
+\hline
+imls & 193.16 & 4.76 & 1.00 & 0.00 & 48.62 \\
+\hline
+mpu & 1.20 & 0.00 & 1.00 & 0.00 & 7.13 \\
+\hline
+\end{tabular}
+\caption{Noisy Spiral Statistics}
+\label{table2}
+\end{table}
+
+\subsection{Benchmark Shapes}
+
+We have modeled shapes specific to our two sets of experiments. Our first set of experiments consists of complex shapes, and so we have modeled five shapes containing different types of complexities. See Figure \ref{fig1} for these shapes. Lastly, the Daratech model contains sharp features, small tunnels, as well as thin surface sheets. 
+
+\begin{figure}
+\centerline{\includegraphics[width=1\columnwidth, keepaspectratio]{Рисунок1.eps}}
+\caption{Complex shapes created via our Polygonal MPU scheme}
+\label{fig1}
+\end{figure}
+
+
+The second set of experiments utilizes simple shapes which may be sampled in a controlled manner. See Figure \ref{fig2} for these shapes. 
+
+
+\begin{figure}
+\centerline{\includegraphics[width=1\columnwidth, keepaspectratio]{Рисунок2.eps}}
+\caption{Simple shapes created via our Polygonal MPU scheme}
+\label{fig2}
+\end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                       C O M P I L I N G
+% You must compile your LaTeX source text "mysource.tex" in THE following
+% way:
+%  pdflatex mysource
+%  bibtex mysource
+%  pdflatex mysource
+%  pdflatex mysource
+% Compiling twice is required to set all the parameters needed
+% (lastpage, labels...) properly. It will also generate the mysource.bbl
+% with your bibliography.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}
